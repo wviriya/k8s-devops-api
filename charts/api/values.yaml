@@ -1,0 +1,120 @@
+# Default values for api.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 2
+
+image:
+  repository: azninja.azurecr.io/fabmed-api
+  tag: latest
+  pullPolicy: Always
+
+imagePullSecrets: []
+nameOverride: "api"
+fullnameOverride: "api"
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podLabels:
+  k8s-app: api
+  aadpodidbinding: "aksdevops-podid"
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+secretOjbects:
+  key: db
+  secretName: mongodb
+  kvObjectName: dbconnection
+
+secretProvider:
+  name: "azure-kvname"
+  enabled: true
+  usePodIdentity: "false"          
+  keyVaultName: "azninja"                                         # the name of the KeyVault
+  resourceGroup: "ftademo-rg"                                     # [REQUIRED for version < 0.0.4] the resource group of the KeyVault
+  subscriptionId: "c1a37f4e-c839-41b3-a627-5ea61b973cd1"          # [REQUIRED for version < 0.0.4] the subscription ID of the KeyVault
+  tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+  secretObject: |-
+    # multi line string
+    array 
+      - |
+        objectName: fabmeddb
+        objectType: secret
+        objectAlias: dbconnection                                     
+        objectVersion: cc19eaca9394470893e1ce9cd5d9f01b
+
+secretVolumes:
+  name: keyvault-volume
+
+env:
+  - name: MONGODB_CONNECTION
+    valueFrom:
+      secretKeyRef:
+        name: mongodb
+        key: db 
+
+service:
+  name: "internal-api"
+  type: ClusterIP           # ClusterIP, NodePort, LoadBalancer, ExternalName 
+  port: 3001
+  targetPort: 3001
+
+ingress:
+  enabled: false
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: chart-example.local
+      paths: []
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  requests:
+     cpu: 100m
+     memory: 128Mi
+  
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
